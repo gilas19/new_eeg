@@ -12,6 +12,8 @@ from src.models.EEGPT import EEGPTClassifier
 from src.training.trainer import Trainer
 
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -31,7 +33,7 @@ def main(cfg: DictConfig):
             entity=cfg.wandb.entity,
             config=OmegaConf.to_container(cfg, resolve=True),
             mode=cfg.wandb.mode,
-            name=f"{cfg.task}_{cfg.model.name}"
+            name=f"{cfg.task}_{cfg.model.type}"
         )
     else:
         wandb.init(mode="disabled")
@@ -53,7 +55,6 @@ def main(cfg: DictConfig):
     n_channels = dataset.trials.shape[0]
     n_timepoints = dataset.trials.shape[2]
 
-    # Create model based on config
     model_type = cfg.model.get('type', 'cnn').lower()
 
     if model_type == 'cnn':
@@ -64,10 +65,8 @@ def main(cfg: DictConfig):
             dropout=cfg.model.cnn.dropout
         )
     elif model_type == 'eegpt':
-        # Get electrode names for EEGPT
         electrode_names = dataset.electrode_names.tolist()
 
-        # Update img_size based on actual data dimensions
         eegpt_config = OmegaConf.to_container(cfg.model.eegpt, resolve=True)
         eegpt_config['img_size'] = [n_channels, n_timepoints]
         eegpt_config['in_channels'] = n_channels
@@ -77,13 +76,21 @@ def main(cfg: DictConfig):
             use_channels_names=electrode_names,
             **eegpt_config
         )
+
+        if eegpt_config.get('load_pretrained', False):
+            checkpoint_path = eegpt_config.get('pretrained_checkpoint')
+            if checkpoint_path and os.path.exists(checkpoint_path):
+                pretrain_ckpt = torch.load(checkpoint_path)
+                target_encoder_state = {}
+                for k, v in pretrain_ckpt['state_dict'].items():
+                    if k.startswith("target_encoder."):
+                        target_encoder_state[k[15:]] = v 
+                model.target_encoder.load_state_dict(target_encoder_state, strict=False)
     else:
         raise ValueError(f"Unknown model type: {model_type}. Choose 'cnn' or 'eegpt'.")
 
-    device = cfg.device if torch.cuda.is_available() else 'cpu'
-
-    # Pass the training config and task name directly
     training_config = cfg.training
+    OmegaConf.set_struct(training_config, False)
     training_config.task = cfg.task
 
     trainer = Trainer(

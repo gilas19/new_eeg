@@ -1,5 +1,0 @@
-defaults:
-  - config
-  - _self_
-
-task: congruent_incongruent

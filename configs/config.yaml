@@ -1,7 +1,8 @@
 defaults:
+  - training: default
+  - task: free_instructed
   - model: cnn
   - preprocessing: default
-  - training: default
   - _self_
 
 # General settings
@@ -12,12 +13,12 @@ device: cuda
 # Data settings
 data:
   data_dir: ../eeg-classification/data/raw/09_25_256hz
-  batch_size: 32
+  batch_size: 64
   val_split: 0.2
 
 # Experiment tracking
 wandb:
-  enabled: false
+  enabled: true
   project: eeg-classification
   entity: null
   mode: online

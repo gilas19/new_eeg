@@ -2,11 +2,10 @@ type: eegpt
 
 eegpt:
   # Architecture
-  patch_stride: null
-  use_mean_pooling: true
-  use_chan_conv: false
+  patch_stride: 64
+  use_chan_conv: true
   interpolate_factor: 2.0
-  desired_time_len: 64
+  desired_time_len: 256
 
   # Regularization
   max_norm_chan_conv: 1
@@ -18,3 +17,8 @@ eegpt:
   rec_drop_rate: 0.1
   rec_attn_drop_rate: 0.1
   rec_drop_path_rate: 0.1
+  use_freeze_encoder: true
+
+  # Pretrained checkpoint loading
+  load_pretrained: true
+  pretrained_checkpoint: /ems/elsc-labs/kadmon-j/gilad.ticher/eeg-classification/checkpoints/eegpt_mcae_58chs_4s_large4E.ckpt

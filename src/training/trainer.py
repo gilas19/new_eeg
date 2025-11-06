@@ -19,14 +19,13 @@ class Trainer:
             weight_decay=config.get('weight_decay', 0.0)
         )
 
-        # Learning rate scheduler
         scheduler_config = getattr(config, 'scheduler', None)
         if scheduler_config is not None and scheduler_config.get('enabled', False):
             scheduler_type = scheduler_config.get('type', 'ReduceLROnPlateau')
             if scheduler_type == 'ReduceLROnPlateau':
                 self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
                     self.optimizer,
-                    mode='max',  # maximize validation accuracy
+                    mode='max',
                     factor=scheduler_config.get('factor', 0.5),
                     patience=scheduler_config.get('patience', 5),
                     verbose=True
@@ -40,7 +39,7 @@ class Trainer:
             elif scheduler_type == 'CosineAnnealingLR':
                 self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                     self.optimizer,
-                    T_max=scheduler_config.get('T_max', config.epochs),
+                    T_max=scheduler_config.get('T_max', config.epochs) * datamodule.num_batches_per_epoch(),
                     eta_min=scheduler_config.get('eta_min', 1e-6)
                 )
             else:
@@ -63,22 +62,14 @@ class Trainer:
         for batch_idx, (data, target) in enumerate(pbar):
             data, target = data.to(self.device), target.to(self.device)
 
-            if torch.isnan(data).any() or torch.isinf(data).any():
-                print(f"Warning: NaN or Inf in input data at batch {batch_idx}")
-                continue
-
             self.optimizer.zero_grad()
             output = self.model(data)
             loss = self.criterion(output, target)
 
-            if torch.isnan(loss) or torch.isinf(loss):
-                print(f"Warning: NaN or Inf loss at batch {batch_idx}")
-                print(f"Output stats - min: {output.min()}, max: {output.max()}, mean: {output.mean()}")
-                continue
-
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
             self.optimizer.step()
+            self.scheduler.step()
 
             total_loss += loss.item()
             preds = output.argmax(dim=1)
@@ -124,7 +115,6 @@ class Trainer:
             train_loss, train_metrics = self.train_epoch()
             val_loss, val_metrics = self.validate()
 
-            # Get current learning rate
             current_lr = self.optimizer.param_groups[0]['lr']
 
             wandb.log({
@@ -143,7 +133,6 @@ class Trainer:
             print(f"  Val Loss: {val_loss:.4f} | Val Acc: {val_metrics['accuracy']:.4f}")
             print(f"  Learning Rate: {current_lr:.6f}")
 
-            # Update learning rate scheduler
             if self.scheduler is not None:
                 if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                     self.scheduler.step(val_metrics['accuracy'])

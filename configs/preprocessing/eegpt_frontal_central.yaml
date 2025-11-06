@@ -4,20 +4,58 @@ filter_incongruent: false
 
 filter_by_length:
   enabled: false
-  min_length: null
-  max_length: null
+  min_length: 128
+  max_length: 192
 
 select_channels:
   enabled: true
-  # Frontal and Central electrodes for EEGPT
-  channels: ['FP1', 'FPZ', 'FP2', 'AF7', 'AF3', 'AF4', 'AF8', 'F7', 'F5', 'F3', 'F1', 'FZ', 'F2', 'F4', 'F6', 'F8', 'FT7', 'FC5', 'FC3', 'FC1', 'FCZ', 'FC2', 'FC4', 'FC6', 'FT8', 'C5', 'C3', 'C1', 'CZ', 'C2', 'C4', 'C6']
+  # Frontal and Central electrodes for EEGPT (34 channels in EEGPT's expected order)
+  # This order MUST match CHANNEL_DICT in EEGPT.py for pretrained weights to work correctly
+  channels:
+    # Frontal
+    - Fp1
+    - Fpz
+    - Fp2
+    - AF7
+    - AF3
+    - AF4
+    - AF8
+    - F7
+    - F5
+    - F3
+    - F1
+    - Fz
+    - F2
+    - F4
+    - F6
+    - F8
+    # Fronto-Central
+    - FT7
+    - FC5
+    - FC3
+    - FC1
+    - FCz
+    - FC2
+    - FC4
+    - FC6
+    - FT8
+    # Central
+    - T7
+    - C5
+    - C3
+    - C1
+    - Cz
+    - C2
+    - C4
+    - C6
+    - T8
 
 response_locking: false
 
 truncate:
-  enabled: true
+  enabled: false
   start_timepoint: 0
-  end_timepoint: 64
+  end_timepoint: 256
 
-handle_nans: false
+handle_nans: true
 normalize_per_trial: true
