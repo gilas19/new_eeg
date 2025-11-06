@@ -1,4 +1,7 @@
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TrialFilter:
@@ -13,11 +16,19 @@ class TrialFilter:
         mask = np.zeros(len(primes), dtype=bool)
         for p, c, r in simple_patterns:
             mask |= (primes == p) & (cues == c) & (reactions == r)
+
+        n_kept = np.sum(mask)
+        n_total = len(primes)
+        logger.info(f"Filter simple trials: kept {n_kept}/{n_total} trials ({100*n_kept/n_total:.1f}%)")
         return mask
 
     @staticmethod
     def filter_incongruent(primes, cues):
-        return primes != cues
+        mask = primes != cues
+        n_kept = np.sum(mask)
+        n_total = len(primes)
+        logger.info(f"Filter incongruent: kept {n_kept}/{n_total} trials ({100*n_kept/n_total:.1f}%)")
+        return mask
 
     @staticmethod
     def filter_by_trial_length(trial_lengths, min_length=None, max_length=None):
@@ -26,6 +37,10 @@ class TrialFilter:
             mask &= trial_lengths >= min_length
         if max_length is not None:
             mask &= trial_lengths <= max_length
+
+        n_kept = np.sum(mask)
+        n_total = len(trial_lengths)
+        logger.info(f"Filter by length (min={min_length}, max={max_length}): kept {n_kept}/{n_total} trials ({100*n_kept/n_total:.1f}%)")
         return mask
 
 
@@ -33,6 +48,7 @@ class ChannelSelector:
     @staticmethod
     def select_channels(electrode_names, channel_names):
         channel_indices = []
+        missing_channels = []
         # Convert all names to uppercase for case-insensitive matching
         electrode_names_upper = np.array([e.upper().strip('.') for e in electrode_names])
 
@@ -41,6 +57,15 @@ class ChannelSelector:
             matches = np.where(electrode_names_upper == name_upper)[0]
             if len(matches) > 0:
                 channel_indices.append(matches[0])
+            else:
+                missing_channels.append(name)
+
+        n_selected = len(channel_indices)
+        n_requested = len(channel_names)
+        logger.info(f"Channel selection: selected {n_selected}/{n_requested} channels")
+        if missing_channels:
+            logger.warning(f"Missing channels not found in data: {missing_channels}")
+
         return np.array(channel_indices)
 
 
@@ -50,6 +75,7 @@ class TrialTransformer:
         locked_trials = np.full_like(trials, np.nan)
         n_channels, n_trials, n_timepoints = trials.shape
 
+        valid_trials = 0
         for trial_idx in range(n_trials):
             rt = int(response_times[trial_idx])
             if rt <= 0 or rt >= n_timepoints:
@@ -57,7 +83,9 @@ class TrialTransformer:
 
             trial_data = trials[:, trial_idx, :rt]
             locked_trials[:, trial_idx, -rt:] = trial_data
+            valid_trials += 1
 
+        logger.info(f"Response locking: locked {valid_trials}/{n_trials} trials with valid response times")
         return locked_trials
 
     @staticmethod
@@ -65,7 +93,11 @@ class TrialTransformer:
         n_channels, n_trials, n_timepoints = trials.shape
         start_idx = start_timepoint if start_timepoint is not None else 0
         end_idx = end_timepoint if end_timepoint is not None else n_timepoints
-        return trials[:, :, start_idx:end_idx]
+
+        truncated = trials[:, :, start_idx:end_idx]
+        new_length = truncated.shape[2]
+        logger.info(f"Truncate trials: {n_timepoints} -> {new_length} timepoints (start={start_idx}, end={end_idx})")
+        return truncated
 
     @staticmethod
     def handle_nans(trials, fill_value=0.0):
@@ -85,6 +117,7 @@ class TrialTransformer:
             mean[np.isnan(mean)] = 0.0
             normalized[:, trial_idx, :] = (trial_data - mean) / std
 
+        logger.info(f"Normalize per trial: normalized {n_trials} trials (per-channel z-score)")
         return normalized
 
 

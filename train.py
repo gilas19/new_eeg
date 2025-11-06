@@ -82,15 +82,9 @@ def main(cfg: DictConfig):
 
     device = cfg.device if torch.cuda.is_available() else 'cpu'
 
-    class TrainingConfig:
-        def __init__(self, cfg):
-            self.task = cfg.task
-            self.epochs = cfg.training.epochs
-            self.patience = cfg.training.patience
-            self.learning_rate = cfg.training.learning_rate
-            self.weight_decay = cfg.training.weight_decay
-
-    training_config = TrainingConfig(cfg)
+    # Pass the training config and task name directly
+    training_config = cfg.training
+    training_config.task = cfg.task
 
     trainer = Trainer(
         model=model,

@@ -1,4 +1,4 @@
-enabled: false
+enabled: true
 filter_simple_trials: false
 filter_incongruent: false
 
@@ -19,4 +19,4 @@ truncate:
   end_timepoint: null
 
 handle_nans: true
-normalize_per_trial: false
+normalize_per_trial: true

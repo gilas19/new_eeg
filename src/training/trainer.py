@@ -16,8 +16,37 @@ class Trainer:
         self.optimizer = torch.optim.Adam(
             model.parameters(),
             lr=config.learning_rate,
-            weight_decay=config.weight_decay
+            weight_decay=config.get('weight_decay', 0.0)
         )
+
+        # Learning rate scheduler
+        scheduler_config = getattr(config, 'scheduler', None)
+        if scheduler_config is not None and scheduler_config.get('enabled', False):
+            scheduler_type = scheduler_config.get('type', 'ReduceLROnPlateau')
+            if scheduler_type == 'ReduceLROnPlateau':
+                self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    self.optimizer,
+                    mode='max',  # maximize validation accuracy
+                    factor=scheduler_config.get('factor', 0.5),
+                    patience=scheduler_config.get('patience', 5),
+                    verbose=True
+                )
+            elif scheduler_type == 'StepLR':
+                self.scheduler = torch.optim.lr_scheduler.StepLR(
+                    self.optimizer,
+                    step_size=scheduler_config.get('step_size', 30),
+                    gamma=scheduler_config.get('gamma', 0.1)
+                )
+            elif scheduler_type == 'CosineAnnealingLR':
+                self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                    self.optimizer,
+                    T_max=scheduler_config.get('T_max', config.epochs),
+                    eta_min=scheduler_config.get('eta_min', 1e-6)
+                )
+            else:
+                raise ValueError(f"Unknown scheduler type: {scheduler_type}")
+        else:
+            self.scheduler = None
 
         self.best_val_acc = 0.0
         self.patience_counter = 0
@@ -95,6 +124,9 @@ class Trainer:
             train_loss, train_metrics = self.train_epoch()
             val_loss, val_metrics = self.validate()
 
+            # Get current learning rate
+            current_lr = self.optimizer.param_groups[0]['lr']
+
             wandb.log({
                 'epoch': epoch,
                 'train_loss': train_loss,
@@ -103,11 +135,20 @@ class Trainer:
                 'val_loss': val_loss,
                 'val_accuracy': val_metrics['accuracy'],
                 'val_f1': val_metrics['f1_score'],
+                'learning_rate': current_lr,
             })
 
             print(f"Epoch {epoch+1}/{self.config.epochs}")
             print(f"  Train Loss: {train_loss:.4f} | Train Acc: {train_metrics['accuracy']:.4f}")
             print(f"  Val Loss: {val_loss:.4f} | Val Acc: {val_metrics['accuracy']:.4f}")
+            print(f"  Learning Rate: {current_lr:.6f}")
+
+            # Update learning rate scheduler
+            if self.scheduler is not None:
+                if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                    self.scheduler.step(val_metrics['accuracy'])
+                else:
+                    self.scheduler.step()
 
             if val_metrics['accuracy'] > self.best_val_acc:
                 self.best_val_acc = val_metrics['accuracy']

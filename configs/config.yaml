@@ -5,13 +5,13 @@ defaults:
   - _self_
 
 # General settings
-task: right_left
+task: free_instructed
 seed: 42
 device: cuda
 
 # Data settings
 data:
-  data_dir: ./data/09_25_7
+  data_dir: ../eeg-classification/data/raw/09_25_256hz
   batch_size: 32
   val_split: 0.2
 
