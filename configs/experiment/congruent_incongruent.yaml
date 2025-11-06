@@ -1,0 +1,7 @@
+# @package _global_
+
+task: congruent_incongruent
+
+training:
+  epochs: 100
+  learning_rate: 0.001
