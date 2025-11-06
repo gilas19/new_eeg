@@ -1,0 +1,16 @@
+defaults:
+  - config
+
+task: right_left
+
+preprocessing:
+  enabled: true
+  response_locking: true
+  handle_nans: true
+  normalize_per_trial: true
+
+training:
+  epochs: 50
+  patience: 10
+  learning_rate: 0.001
+  weight_decay: 0.0001

@@ -34,7 +34,12 @@ def main(cfg: DictConfig):
     else:
         wandb.init(mode="disabled")
 
-    dataset = EEGDataset(data_dir=cfg.data.data_dir, task=cfg.task)
+    preprocessing_config = OmegaConf.to_container(cfg.preprocessing, resolve=True)
+    dataset = EEGDataset(
+        data_dir=cfg.data.data_dir,
+        task=cfg.task,
+        preprocessing_config=preprocessing_config
+    )
 
     datamodule = EEGDataModule(
         dataset=dataset,

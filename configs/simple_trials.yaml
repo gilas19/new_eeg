@@ -1,0 +1,9 @@
+defaults:
+  - config
+
+task: right_left
+
+preprocessing:
+  enabled: true
+  filter_simple_trials: true
+  normalize_per_trial: true

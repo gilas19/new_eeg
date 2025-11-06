@@ -1,0 +1,4 @@
+defaults:
+  - config
+
+task: right_left

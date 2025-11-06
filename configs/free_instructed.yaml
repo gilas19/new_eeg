@@ -1,0 +1,4 @@
+defaults:
+  - config
+
+task: free_instructed
