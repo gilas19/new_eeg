@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import torch
 import wandb
 import hydra
@@ -7,6 +8,7 @@ from omegaconf import DictConfig, OmegaConf
 from src.data.dataset import EEGDataset
 from src.data.datamodule import EEGDataModule
 from src.models.cnn import EEG_CNN
+from src.models.EEGPT import EEGPTClassifier
 from src.training.trainer import Trainer
 
 
@@ -51,12 +53,32 @@ def main(cfg: DictConfig):
     n_channels = dataset.trials.shape[0]
     n_timepoints = dataset.trials.shape[2]
 
-    model = EEG_CNN(
-        n_channels=n_channels,
-        n_timepoints=n_timepoints,
-        n_classes=2,
-        dropout=cfg.model.dropout
-    )
+    # Create model based on config
+    model_type = cfg.model.get('type', 'cnn').lower()
+
+    if model_type == 'cnn':
+        model = EEG_CNN(
+            n_channels=n_channels,
+            n_timepoints=n_timepoints,
+            n_classes=2,
+            dropout=cfg.model.cnn.dropout
+        )
+    elif model_type == 'eegpt':
+        # Get electrode names for EEGPT
+        electrode_names = dataset.electrode_names.tolist()
+
+        # Update img_size based on actual data dimensions
+        eegpt_config = OmegaConf.to_container(cfg.model.eegpt, resolve=True)
+        eegpt_config['img_size'] = [n_channels, n_timepoints]
+        eegpt_config['in_channels'] = n_channels
+
+        model = EEGPTClassifier(
+            num_classes=2,
+            use_channels_names=electrode_names,
+            **eegpt_config
+        )
+    else:
+        raise ValueError(f"Unknown model type: {model_type}. Choose 'cnn' or 'eegpt'.")
 
     device = cfg.device if torch.cuda.is_available() else 'cpu'
 

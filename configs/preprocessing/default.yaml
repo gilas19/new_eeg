@@ -1,0 +1,22 @@
+enabled: false
+filter_simple_trials: false
+filter_incongruent: false
+
+filter_by_length:
+  enabled: false
+  min_length: null
+  max_length: null
+
+select_channels:
+  enabled: false
+  channels: []
+
+response_locking: false
+
+truncate:
+  enabled: false
+  start_timepoint: null
+  end_timepoint: null
+
+handle_nans: true
+normalize_per_trial: false

@@ -1,0 +1,4 @@
+type: cnn
+
+cnn:
+  dropout: 0.3

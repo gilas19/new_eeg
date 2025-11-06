@@ -1,0 +1,20 @@
+type: eegpt
+
+eegpt:
+  # Architecture
+  patch_stride: null
+  use_mean_pooling: true
+  use_chan_conv: false
+  interpolate_factor: 2.0
+  desired_time_len: 64
+
+  # Regularization
+  max_norm_chan_conv: 1
+  max_norm_head: 0.5
+  qkv_bias: true
+  enc_drop_rate: 0.1
+  enc_attn_drop_rate: 0.1
+  enc_drop_path_rate: 0.1
+  rec_drop_rate: 0.1
+  rec_attn_drop_rate: 0.1
+  rec_drop_path_rate: 0.1

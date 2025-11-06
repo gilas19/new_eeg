@@ -1,5 +1,6 @@
 defaults:
   - config
+  - _self_
 
 task: right_left
 

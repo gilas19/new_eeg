@@ -1,0 +1,10 @@
+defaults:
+  - config
+  - model: eegpt
+  - preprocessing: eegpt_frontal_central
+  - _self_
+
+task: right_left
+
+data:
+  batch_size: 16

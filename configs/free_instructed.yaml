@@ -1,4 +1,5 @@
 defaults:
   - config
+  - _self_
 
 task: free_instructed

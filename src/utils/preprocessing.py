@@ -33,8 +33,12 @@ class ChannelSelector:
     @staticmethod
     def select_channels(electrode_names, channel_names):
         channel_indices = []
+        # Convert all names to uppercase for case-insensitive matching
+        electrode_names_upper = np.array([e.upper().strip('.') for e in electrode_names])
+
         for name in channel_names:
-            matches = np.where(electrode_names == name)[0]
+            name_upper = name.upper().strip('.')
+            matches = np.where(electrode_names_upper == name_upper)[0]
             if len(matches) > 0:
                 channel_indices.append(matches[0])
         return np.array(channel_indices)
@@ -57,10 +61,10 @@ class TrialTransformer:
         return locked_trials
 
     @staticmethod
-    def truncate_trials(trials, start_ratio=0.0, end_ratio=1.0):
+    def truncate_trials(trials, start_timepoint=None, end_timepoint=None):
         n_channels, n_trials, n_timepoints = trials.shape
-        start_idx = int(n_timepoints * start_ratio)
-        end_idx = int(n_timepoints * end_ratio)
+        start_idx = start_timepoint if start_timepoint is not None else 0
+        end_idx = end_timepoint if end_timepoint is not None else n_timepoints
         return trials[:, :, start_idx:end_idx]
 
     @staticmethod
@@ -117,9 +121,9 @@ def apply_preprocessing(trials, electrode_names, primes, cues, reactions,
         trials = TrialTransformer.response_locking(trials, response_times)
 
     if config.get('truncate', {}).get('enabled', False):
-        start_ratio = config['truncate'].get('start_ratio', 0.0)
-        end_ratio = config['truncate'].get('end_ratio', 1.0)
-        trials = TrialTransformer.truncate_trials(trials, start_ratio, end_ratio)
+        start_timepoint = config['truncate'].get('start_timepoint', None)
+        end_timepoint = config['truncate'].get('end_timepoint', None)
+        trials = TrialTransformer.truncate_trials(trials, start_timepoint, end_timepoint)
 
     if config.get('handle_nans', False):
         trials = TrialTransformer.handle_nans(trials, fill_value=0.0)

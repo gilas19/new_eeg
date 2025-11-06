@@ -164,25 +164,23 @@ def test_truncate_trials():
 
     trials = np.random.randn(5, 10, 100)
 
-    # Test with ratio parameters
-    start_ratio = 0.2
-    end_ratio = 0.8
+    # Test with timepoint parameters
+    start_timepoint = 20
+    end_timepoint = 80
 
-    truncated = TrialTransformer.truncate_trials(trials, start_ratio, end_ratio)
+    truncated = TrialTransformer.truncate_trials(trials, start_timepoint, end_timepoint)
 
-    expected_length = int(100 * end_ratio) - int(100 * start_ratio)
+    expected_length = end_timepoint - start_timepoint
 
     assert truncated.shape[2] == expected_length, \
         f"Expected {expected_length} timepoints, got {truncated.shape[2]}"
     assert truncated.shape[:2] == trials.shape[:2], "Channels and trials should be preserved"
 
     # Check that truncated data matches original slice
-    start_idx = int(100 * start_ratio)
-    end_idx = int(100 * end_ratio)
-    assert np.allclose(truncated, trials[:, :, start_idx:end_idx])
+    assert np.allclose(truncated, trials[:, :, start_timepoint:end_timepoint])
 
     print(f"✓ Original length: {trials.shape[2]}, Truncated: {truncated.shape[2]}")
-    print(f"✓ Truncated from {start_ratio*100}% to {end_ratio*100}% of trial")
+    print(f"✓ Truncated from timepoint {start_timepoint} to {end_timepoint}")
 
 
 def test_handle_nans():
