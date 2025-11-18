@@ -11,7 +11,6 @@ dist/
 build/
 
 .ipynb_checkpoints/
-*.ipynb
 
 data/
 checkpoints/
