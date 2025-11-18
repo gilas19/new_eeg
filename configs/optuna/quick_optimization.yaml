@@ -1,0 +1,44 @@
+# Quick Hyperparameter Optimization Configuration (fewer trials for testing)
+# Usage: python optuna_optimization.py --config configs/optuna/quick_optimization.yaml
+
+base_config: configs/config.yaml
+study_name: quick_eeg_optimization
+n_trials: 10
+timeout: null
+
+storage: sqlite://checkpoints/optimization_results/eegpt_optimization.db
+output_dir: checkpoints/optimization_results
+
+config_overrides:
+  model.type: cnn
+  task: congruent_incongruent
+  training.epochs: 10 
+  training.patience: 3
+  wandb.enabled: false
+
+sampler:
+  type: TPESampler
+  n_startup_trials: 3
+
+pruner:
+  type: MedianPruner
+  n_startup_trials: 2
+  n_warmup_steps: 0
+
+search_space:
+  learning_rate:
+    min: 0.0001
+    max: 0.001
+    log: true
+
+  weight_decay:
+    min: 0.00001
+    max: 0.0001
+    log: true
+
+  batch_size:
+    choices: [32, 64]
+
+  dropout:
+    min: 0.2
+    max: 0.5

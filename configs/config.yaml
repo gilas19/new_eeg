@@ -5,18 +5,17 @@ defaults:
   - preprocessing: default
   - _self_
 
-# General settings
 task: free_instructed
 seed: 42
 device: cuda
 
-# Data settings
 data:
   data_dir: ../eeg-classification/data/raw/09_25_256hz
   batch_size: 64
-  val_split: 0.2
+  val_split: 0.1
+  test_split: 0.1
+  n_folds: 1
 
-# Experiment tracking
 wandb:
   enabled: true
   project: eeg-classification

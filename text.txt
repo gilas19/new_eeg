@@ -1,0 +1,64 @@
+commit ac6450a1ecd54ca2e94e7ecabfd811cd57b40bb6
+Author: gilas19 <gilad.ticher@gmail.com>
+Date:   Thu Nov 6 15:47:53 2025 +0200
+
+    Fix channel ordering for EEGPT pretrained weights
+    
+    - Update preprocessing config to properly order channels to match EEGPT's CHANNEL_DICT
+    - Select 34 frontal and central electrodes in correct order for pretrained embeddings
+    - Add T7 and T8 channels that were previously missing
+    - Add learning rate scheduler support (CosineAnnealingLR, StepLR, ReduceLROnPlateau)
+    - Enable pretrained checkpoint loading for EEGPT encoder
+    - Add comprehensive logging to preprocessing pipeline
+    - Reorganize config structure with task-specific configs
+    
+    This ensures the pretrained chan_embed weights work correctly by maintaining
+    the spatial relationships learned during pretraining.
+    
+    🤖 Generated with [Claude Code](https://claude.com/claude-code)
+    
+    Co-Authored-By: Claude <noreply@anthropic.com>
+
+commit 63ec9bda79e16a2aec0e3030a0d37bef94c0c91c
+Author: gilas19 <gilad.ticher@gmail.com>
+Date:   Thu Nov 6 12:02:56 2025 +0200
+
+    feat: Add learning rate scheduler and enhance logging
+    
+    This commit introduces a configurable learning rate scheduler to the training process, allowing for more advanced learning rate control. The scheduler can be configured in `configs/training/default.yaml` and supports `ReduceLROnPlateau`, `StepLR`, and `CosineAnnealingLR`.
+    
+    Key changes:
+    - Added learning rate scheduler to the `Trainer`.
+    - Log learning rate to wandb.
+    - Added detailed logging to the preprocessing pipeline to provide insights into filtering and transformation steps.
+    - Simplified the training configuration in `train.py`.
+    - Updated the default configuration to enable preprocessing and per-trial normalization.
+
+commit abbdef6a52519c67ad85822d7a2e06747db582ed
+Author: gilas19 <gilad.ticher@gmail.com>
+Date:   Thu Nov 6 10:48:31 2025 +0200
+
+    Add EEGPT support and reorganize config structure
+    
+    Major changes:
+    - Integrate EEGPTClassifier model from EEGPT.py
+    - Add model selection in train.py (CNN or EEGPT)
+    - Reorganize configs into modular subdirectories:
+      - configs/model/ for model-specific settings
+      - configs/preprocessing/ for preprocessing pipelines
+      - configs/training/ for training hyperparameters
+    - Update preprocessing to use timepoints instead of ratios for truncation
+    - Add case-insensitive electrode name matching in channel selector
+    - Create EEGPT config with frontal/central electrode selection
+    - Add _self_ to all config defaults to fix Hydra warnings
+    - Update all tests to match new preprocessing API
+    
+    Config structure:
+    - Main config.yaml uses Hydra defaults system
+    - Modular configs can be mixed and matched
+    - EEGPT config uses 32 frontal/central electrodes
+    - All task configs updated with proper defaults
+    
+    🤖 Generated with [Claude Code](https://claude.com/claude-code)
+    
+    Co-Authored-By: Claude <noreply@anthropic.com>

@@ -1,13 +1,13 @@
 import numpy as np
-import torch
+# import torch
 
-def create_tensor_datasets(trials_dataset, true_labels, trials_sum_new):
-    Dataset = torch.utils.data.TensorDataset(torch.permute(torch.Tensor(trials_dataset),(1,0,2)), torch.Tensor(true_labels))
-    train_num = int(0.8*trials_sum_new)
-    test_num = int(trials_sum_new-train_num)
-    train_data, test_data = torch.utils.data.random_split(Dataset, [train_num, test_num])
-    del Dataset
-    return train_data, test_data
+# def create_tensor_datasets(trials_dataset, true_labels, trials_sum_new):
+#     Dataset = torch.utils.data.TensorDataset(torch.permute(torch.Tensor(trials_dataset),(1,0,2)), torch.Tensor(true_labels))
+#     train_num = int(0.8*trials_sum_new)
+#     test_num = int(trials_sum_new-train_num)
+#     train_data, test_data = torch.utils.data.random_split(Dataset, [train_num, test_num])
+#     del Dataset
+#     return train_data, test_data
 
 def filter_dataset_by_conditions(trials_dataset, true_labels, cues, primes, subjects_through_trials, simple = False, congruent_vs_incongruent = False, free_choice_vs_instruction = False, remove_subjects_groups = ['MULTI_EMG'], clean_artifacts = False):
     '''

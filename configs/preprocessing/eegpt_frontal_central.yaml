@@ -4,13 +4,11 @@ filter_incongruent: false
 
 filter_by_length:
   enabled: false
-  min_length: 128
-  max_length: 192
+  min_length: 100
+  max_length: 150
 
 select_channels:
   enabled: true
-  # Frontal and Central electrodes for EEGPT (34 channels in EEGPT's expected order)
-  # This order MUST match CHANNEL_DICT in EEGPT.py for pretrained weights to work correctly
   channels:
     # Frontal
     - Fp1
@@ -57,5 +55,5 @@ truncate:
   start_timepoint: 0
   end_timepoint: 256
 
-handle_nans: true
+handle_nans: false
 normalize_per_trial: true

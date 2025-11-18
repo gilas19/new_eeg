@@ -3,7 +3,6 @@ patience: 3
 learning_rate: 0.0001
 weight_decay: 0.00001
 
-# Learning rate scheduler
 scheduler:
   enabled: true
   type: CosineAnnealingLR  # Options: ReduceLROnPlateau, StepLR, CosineAnnealingLR

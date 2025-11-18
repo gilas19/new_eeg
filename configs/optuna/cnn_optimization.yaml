@@ -1,0 +1,64 @@
+# Optuna Hyperparameter Optimization Configuration for CNN Model
+# Usage: python optuna_optimization.py --config configs/optuna/cnn_optimization.yaml
+
+# Base configuration file to load
+base_config: configs/config.yaml
+
+# Study configuration
+study_name: cnn_eeg_optimization
+n_trials: 50
+timeout: null  # Set to number of seconds for time-based stopping, null for trial-based
+
+# Storage backend for study persistence
+storage: sqlite://checkpoints/optimization_results/eegpt_optimization.db
+
+# Output directory for results
+output_dir: checkpoints/optimization_results
+
+# Config overrides (applied on top of base_config)
+config_overrides:
+  model.type: cnn
+  task: congruent_incongruent
+  training.epochs: 15
+  training.patience: 5
+  wandb.enabled: true
+
+# Sampler configuration
+sampler:
+  type: TPESampler  # Options: TPESampler, RandomSampler, GridSampler
+  n_startup_trials: 10  # Number of random trials before using TPE
+
+# Pruner configuration (early stopping for unpromising trials)
+pruner:
+  type: MedianPruner  # Options: MedianPruner, HyperbandPruner, NopPruner
+  n_startup_trials: 5  # Don't prune until after this many trials
+  n_warmup_steps: 0  # Don't prune until after this many epochs
+
+# Hyperparameter search space
+search_space:
+  # Learning rate (log scale between 1e-5 and 1e-2)
+  learning_rate:
+    min: 0.00001
+    max: 0.01
+    log: true
+
+  # Weight decay (log scale)
+  weight_decay:
+    min: 0.000001
+    max: 0.001
+    log: true
+
+  # Batch size (categorical choice)
+  batch_size:
+    choices: [16, 32, 64, 128]
+
+  # Dropout rate for CNN
+  dropout:
+    min: 0.1
+    max: 0.6
+
+  # Learning rate scheduler minimum (for CosineAnnealingLR)
+  eta_min:
+    min: 0.0000001
+    max: 0.00001
+    log: true

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import wandb
 from tqdm import tqdm
-from .metrics import compute_metrics, get_classification_report
+from .metrics import compute_metrics
 
 
 class Trainer:
@@ -57,7 +57,7 @@ class Trainer:
         all_targets = []
 
         train_loader = self.datamodule.train_dataloader()
-        pbar = tqdm(train_loader, desc='Training', leave=False)
+        pbar = tqdm(train_loader, desc=f'Training')
 
         for batch_idx, (data, target) in enumerate(pbar):
             data, target = data.to(self.device), target.to(self.device)
@@ -69,12 +69,14 @@ class Trainer:
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
             self.optimizer.step()
-            self.scheduler.step()
+
+            if self.scheduler is not None and isinstance(self.scheduler, torch.optim.lr_scheduler.CosineAnnealingLR):
+                self.scheduler.step()
 
             total_loss += loss.item()
             preds = output.argmax(dim=1)
-            all_preds.append(preds)
-            all_targets.append(target)
+            all_preds.append(preds.cpu())
+            all_targets.append(target.cpu())
 
             pbar.set_postfix({'loss': loss.item()})
 
@@ -101,14 +103,41 @@ class Trainer:
 
                 total_loss += loss.item()
                 preds = output.argmax(dim=1)
-                all_preds.append(preds)
-                all_targets.append(target)
+                all_preds.append(preds.cpu())
+                all_targets.append(target.cpu())
 
         all_preds = torch.cat(all_preds)
         all_targets = torch.cat(all_targets)
         metrics = compute_metrics(all_preds, all_targets)
 
         return total_loss / len(val_loader), metrics
+
+    def test(self):
+        """Evaluate model on test set."""
+        self.model.eval()
+        total_loss = 0
+        all_preds = []
+        all_targets = []
+
+        test_loader = self.datamodule.test_dataloader()
+
+        with torch.no_grad():
+            for data, target in test_loader:
+                data, target = data.to(self.device), target.to(self.device)
+
+                output = self.model(data)
+                loss = self.criterion(output, target)
+
+                total_loss += loss.item()
+                preds = output.argmax(dim=1)
+                all_preds.append(preds.cpu())
+                all_targets.append(target.cpu())
+
+        all_preds = torch.cat(all_preds)
+        all_targets = torch.cat(all_targets)
+        metrics = compute_metrics(all_preds, all_targets)
+
+        return total_loss / len(test_loader), metrics
 
     def train(self):
         for epoch in range(self.config.epochs):
@@ -117,45 +146,61 @@ class Trainer:
 
             current_lr = self.optimizer.param_groups[0]['lr']
 
-            wandb.log({
-                'epoch': epoch,
-                'train_loss': train_loss,
-                'train_accuracy': train_metrics['accuracy'],
-                'train_f1': train_metrics['f1_score'],
-                'val_loss': val_loss,
-                'val_accuracy': val_metrics['accuracy'],
-                'val_f1': val_metrics['f1_score'],
-                'learning_rate': current_lr,
-            })
+            print(f"\nEpoch {epoch+1}/{self.config.epochs} - Train Loss: {train_loss:.4f}, Train Acc: {train_metrics['accuracy']:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_metrics['accuracy']:.4f}")
 
-            print(f"Epoch {epoch+1}/{self.config.epochs}")
-            print(f"  Train Loss: {train_loss:.4f} | Train Acc: {train_metrics['accuracy']:.4f}")
-            print(f"  Val Loss: {val_loss:.4f} | Val Acc: {val_metrics['accuracy']:.4f}")
-            print(f"  Learning Rate: {current_lr:.6f}")
+            log_dict = {
+                'epoch': epoch,
+                'train/loss': train_loss,
+                'train/accuracy': train_metrics['accuracy'],
+                'train/precision': train_metrics['precision'],
+                'train/recall': train_metrics['recall'],
+                'train/f1': train_metrics['f1_score'],
+                'val/loss': val_loss,
+                'val/accuracy': val_metrics['accuracy'],
+                'val/precision': val_metrics['precision'],
+                'val/recall': val_metrics['recall'],
+                'val/f1': val_metrics['f1_score'],
+                'learning_rate': current_lr,
+                'patience_counter': self.patience_counter,
+                'best_val_accuracy': self.best_val_acc,
+            }
+
+            wandb.log(log_dict)
 
             if self.scheduler is not None:
                 if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
                     self.scheduler.step(val_metrics['accuracy'])
-                else:
+                elif isinstance(self.scheduler, torch.optim.lr_scheduler.StepLR):
                     self.scheduler.step()
 
-            if val_metrics['accuracy'] > self.best_val_acc:
+            is_best = val_metrics['accuracy'] > self.best_val_acc
+            if is_best:
                 self.best_val_acc = val_metrics['accuracy']
                 self.patience_counter = 0
-                torch.save(self.model.state_dict(), f"checkpoints/best_model_{self.config.task}.pt")
+                # torch.save(self.model.state_dict(), f"checkpoints/best_model_{self.config.task}.pt")
+                wandb.log({'best_epoch': epoch, 'checkpoint_saved': True})
             else:
                 self.patience_counter += 1
 
             if self.patience_counter >= self.config.patience:
-                print(f"Early stopping at epoch {epoch+1}")
+                wandb.log({'early_stopped_at_epoch': epoch, 'early_stopping_triggered': True})
                 break
 
     def run(self):
-        print(f"Training on task: {self.config.task}")
-        print(f"Device: {self.device}")
+        wandb.log({
+            'config/task': self.config.task,
+            'config/epochs': self.config.epochs,
+            'config/learning_rate': self.config.learning_rate,
+            'config/patience': self.config.patience,
+            'config/weight_decay': self.config.get('weight_decay', 0.0),
+            'config/device': str(self.device),
+            'config/optimizer': 'Adam',
+        })
 
         self.train()
 
-        print(f"\nBest validation accuracy: {self.best_val_acc:.4f}")
+        wandb.log({
+            'final/best_val_accuracy': self.best_val_acc,
+        })
 
         return self.best_val_acc
