@@ -1,0 +1,5 @@
+data_dir: ../eeg-classification/data/raw/09_25_256hz
+batch_size: 64
+val_split: 0.1
+test_split: 0.1
+n_folds: 5

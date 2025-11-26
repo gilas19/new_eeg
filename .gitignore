@@ -12,7 +12,7 @@ build/
 
 .ipynb_checkpoints/
 
-data/
+/data/
 checkpoints/
 *.pt
 *.pth
@@ -21,7 +21,7 @@ outputs/
 multirun/
 .hydra/
 
-wandb/
+/wandb/
 
 .DS_Store
 .vscode/

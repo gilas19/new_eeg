@@ -1,0 +1,4 @@
+enabled: true
+project: eeg-classification
+entity: null
+mode: online
