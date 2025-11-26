@@ -1,0 +1,16 @@
+# @package _global_
+
+defaults:
+  - override /data: default
+  - override /wandb: default
+  - override /training: default
+  - override /task: right_left
+  - override /model: cnn
+  - override /preprocessing: default
+
+task: right_left
+seed: 42
+device: cuda
+
+preprocessing:
+  filter_simple_trials: true

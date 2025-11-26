@@ -2,6 +2,7 @@ import os
 import numpy as np
 import torch
 import wandb
+import logging
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
@@ -13,6 +14,7 @@ from src.training.trainer import Trainer
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+log = logging.getLogger(__name__)
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -131,12 +133,22 @@ def main(cfg: DictConfig):
 
     os.makedirs("checkpoints", exist_ok=True)
 
+    log.info(f"Loading EEG dataset from: {cfg.data.data_dir}")
+    log.info(f"Task: {cfg.task}")
+    log.info(f"Device: {device}")
+
     preprocessing_config = OmegaConf.to_container(cfg.preprocessing, resolve=True)
     dataset = EEGDataset(
         data_dir=cfg.data.data_dir,
         task=cfg.task,
         preprocessing_config=preprocessing_config
     )
+
+    log.info(f"Dataset loaded - Shape: {dataset.trials.shape} (channels, trials, timepoints)")
+    log.info(f"Number of channels: {dataset.trials.shape[0]}")
+    log.info(f"Number of trials: {dataset.trials.shape[1]}")
+    log.info(f"Number of timepoints: {dataset.trials.shape[2]}")
+    log.info(f"Class distribution - Class 0: {(dataset.labels == 0).sum()}, Class 1: {(dataset.labels == 1).sum()}")
 
     n_folds = cfg.data.get('n_folds', None)
     use_cv = n_folds is not None and n_folds > 1
@@ -176,6 +188,17 @@ def main(cfg: DictConfig):
         avg_test_loss = np.mean([r['test_loss'] for r in all_results])
         std_test_loss = np.std([r['test_loss'] for r in all_results])
 
+        log.info(f"\n{'='*60}")
+        log.info(f"Cross-Validation Summary ({n_folds} folds)")
+        log.info(f"{'='*60}")
+        log.info(f"Validation Accuracy: {avg_val_acc:.4f} ± {std_val_acc:.4f}")
+        log.info(f"Test Accuracy:       {avg_test_acc:.4f} ± {std_test_acc:.4f}")
+        log.info(f"Test Precision:      {avg_test_precision:.4f} ± {std_test_precision:.4f}")
+        log.info(f"Test Recall:         {avg_test_recall:.4f} ± {std_test_recall:.4f}")
+        log.info(f"Test F1 Score:       {avg_test_f1:.4f} ± {std_test_f1:.4f}")
+        log.info(f"Test Loss:           {avg_test_loss:.4f} ± {std_test_loss:.4f}")
+        log.info(f"{'='*60}\n")
+
         if cfg.wandb.enabled:
             wandb.init(
                 project=cfg.wandb.project,
@@ -203,6 +226,8 @@ def main(cfg: DictConfig):
             wandb.finish()
 
     else:
+        log.info("Starting single train/val/test split")
+
         if cfg.wandb.enabled:
             wandb.init(
                 project=cfg.wandb.project,
@@ -215,6 +240,17 @@ def main(cfg: DictConfig):
             wandb.init(mode="disabled")
 
         results = run_single_fold(cfg, dataset)
+
+        log.info(f"\n{'='*60}")
+        log.info(f"Training Summary")
+        log.info(f"{'='*60}")
+        log.info(f"Best Validation Accuracy: {results['val_accuracy']:.4f}")
+        log.info(f"Test Accuracy:            {results['test_accuracy']:.4f}")
+        log.info(f"Test Precision:           {results['test_precision']:.4f}")
+        log.info(f"Test Recall:              {results['test_recall']:.4f}")
+        log.info(f"Test F1 Score:            {results['test_f1']:.4f}")
+        log.info(f"Test Loss:                {results['test_loss']:.4f}")
+        log.info(f"{'='*60}\n")
 
         wandb.finish()
 

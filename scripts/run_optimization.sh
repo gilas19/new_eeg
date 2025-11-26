@@ -2,11 +2,12 @@
 #SBATCH --job-name=optuna_optimization
 #SBATCH --output=outputs/optuna_optimization/%j.out
 #SBATCH --error=outputs/optuna_optimization/%j.err
+#SBATCH --gres=gpu:1
 
 # Hyperparameter Optimization Runner Script
 # This script provides easy ways to run different optimization configurations
 
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=1 # Specify which GPU to use
 
 # Default values
 CONFIG="configs/optuna/cnn_optimization.yaml"

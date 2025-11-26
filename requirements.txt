@@ -10,4 +10,4 @@ optuna-integration>=3.0.0
 plotly>=5.0.0
 kaleido>=0.2.0
 # Optional: Optuna dashboard for monitoring
-optuna-dashboard>=0.10.0
+# optuna-dashboard>=0.10.0

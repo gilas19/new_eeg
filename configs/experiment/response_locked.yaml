@@ -1,0 +1,27 @@
+# @package _global_
+
+defaults:
+  - override /data: default
+  - override /wandb: default
+  - override /training: default
+  - override /task: right_left
+  - override /model: cnn
+  - override /preprocessing: default
+
+task: right_left
+seed: 42
+device: cuda
+
+preprocessing:
+  response_locking: true
+
+training:
+  epochs: 50
+  patience: 10
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  scheduler:
+    enabled: true
+    type: CosineAnnealingLR
+    T_max: 50
+    eta_min: 1e-6

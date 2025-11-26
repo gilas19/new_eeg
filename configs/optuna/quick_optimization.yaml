@@ -1,5 +1,3 @@
-# Quick Hyperparameter Optimization Configuration (fewer trials for testing)
-# Usage: python optuna_optimization.py --config configs/optuna/quick_optimization.yaml
 
 base_config: configs/config.yaml
 study_name: quick_eeg_optimization

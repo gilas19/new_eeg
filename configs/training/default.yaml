@@ -5,13 +5,10 @@ weight_decay: 0.00001
 
 scheduler:
   enabled: true
-  type: CosineAnnealingLR  # Options: ReduceLROnPlateau, StepLR, CosineAnnealingLR
-  # ReduceLROnPlateau parameters
+  type: CosineAnnealingLR
   factor: 0.5
   patience: 5
-  # StepLR parameters
   step_size: 30
   gamma: 0.1
-  # CosineAnnealingLR parameters
   T_max: 15
   eta_min: 1e-6

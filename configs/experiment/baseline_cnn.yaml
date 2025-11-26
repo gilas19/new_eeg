@@ -1,0 +1,13 @@
+# @package _global_
+
+defaults:
+  - override /data: default
+  - override /wandb: default
+  - override /training: default
+  - override /task: free_instructed
+  - override /model: cnn
+  - override /preprocessing: default
+
+task: free_instructed
+seed: 42
+device: cuda
